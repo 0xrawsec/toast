@@ -51,7 +51,7 @@ func AssertOrPanic(condition bool, i ...interface{}) {
 
 func Assert(t *testing.T, condition bool, i ...interface{}) {
 	if !condition {
-		t.Log(msg(assertFailMsg, i...))
+		t.Error(msg(assertFailMsg, i...))
 		if FailFast {
 			t.FailNow()
 		}
@@ -61,14 +61,35 @@ func Assert(t *testing.T, condition bool, i ...interface{}) {
 func ShouldPanic(t *testing.T, f func(), i ...interface{}) {
 	defer func() { recover() }()
 	f()
-	t.Log(msg(assertFailMsg, i...))
+	t.Error(msg(assertFailMsg, i...))
 	if FailFast {
 		t.FailNow()
 	}
 }
 
+func CheckErr(t *testing.T, err error) {
+	if err != nil {
+		t.Error(msg("", err))
+		if FailFast {
+			t.FailNow()
+		}
+	}
+}
+
+func Wrap(t *testing.T, init func(), test func(*testing.T), cleanup func()) {
+	if init != nil {
+		init()
+	}
+
+	if cleanup != nil {
+		defer cleanup()
+	}
+
+	test(t)
+}
+
 func Error(t *testing.T, i ...interface{}) {
-	t.Log(msg("", i...))
+	t.Error(msg("", i...))
 	if FailFast {
 		t.FailNow()
 	}
