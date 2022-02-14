@@ -2,27 +2,58 @@ package toast
 
 import (
 	"fmt"
+	"io"
 	"testing"
 )
 
-func initTest() {
-	fmt.Println("Doing some init job")
+var (
+	i = 0
+)
+
+func initTest(t *testing.T) {
+	if i != 0 {
+		t.Error("Init failed")
+	}
+	t.Log("Doing some init job")
+	i++
 }
 
-func cleanupTest() {
-	fmt.Println("Doing some cleanup job")
+func cleanupTest(t *testing.T) {
+	if i != 2 {
+		t.Error("Cleanup test failed")
+	}
+	t.Log("Doing some cleanup job")
 }
 
 func testWrap(t *testing.T) {
+	if i != 1 {
+		t.Error("Wrapped test failed")
+	}
 	t.Log("This is a wrapped test")
+	i++
 }
 
 func TestToast(t *testing.T) {
-	Assert(t, mkfmt(1, 2, 3) == "%v %v %v")
-	AssertOrPanic(true)
-	ShouldPanic(t, func() { AssertOrPanic(2 == 3) })
-	Wrap(t, initTest, testWrap, cleanupTest)
-	CheckErr(t, nil)
-	CheckErr(t, fmt.Errorf("This is a random error"))
-	t.Log("Ending test")
+	tt := FromT(t)
+	// making tests
+	tt.FailFast = false
+	tt.mock = true
+
+	tt.ExpectErr(fmt.Errorf("random error"), nil)
+	tt.ExpectErr(fmt.Errorf("encountered error %w", io.ErrClosedPipe), io.ErrClosedPipe)
+
+	tt.Wrap(initTest, testWrap, cleanupTest)
+
+	// ok
+	tt.Assert(mkfmt(1, 2, 3) == "%v %v %v")
+	// fail
+	tt.Assert("one" == "two")
+
+	tt.ShouldPanic(func() { AssertOrPanic(2 == 3) })
+	tt.ShouldPanic(func() { AssertOrPanic(true) })
+
+	// should not print message
+	tt.CheckErr(nil)
+	// should print message
+	tt.CheckErr(fmt.Errorf("This is a random error"))
 }
