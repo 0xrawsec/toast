@@ -85,7 +85,7 @@ func (t *T) CheckErr(err error) {
 }
 
 func (t *T) ExpectErr(err, expect error) {
-	if !errors.Is(err, expect) {
+	if !errors.As(err, &expect) {
 		t.log(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
 		if t.FailFast {
 			t.FailNow()
