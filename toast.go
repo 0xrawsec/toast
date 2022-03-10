@@ -3,6 +3,7 @@ package toast
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -71,7 +72,7 @@ func (t *T) log(s string) {
 func (t *T) Error(i ...interface{}) {
 	t.log(msg("", i...))
 	if t.FailFast {
-		t.FailNow()
+		os.Exit(1)
 	}
 }
 
@@ -79,7 +80,7 @@ func (t *T) CheckErr(err error) {
 	if err != nil {
 		t.log(msg("", err))
 		if t.FailFast {
-			t.FailNow()
+			os.Exit(1)
 		}
 	}
 }
@@ -88,7 +89,7 @@ func (t *T) ExpectErr(err, expect error) {
 	if !errors.As(err, &expect) {
 		t.log(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
 		if t.FailFast {
-			t.FailNow()
+			os.Exit(1)
 		}
 	}
 }
@@ -98,7 +99,7 @@ func (t *T) ShouldPanic(f func(), i ...interface{}) {
 	f()
 	t.log(msg("should have panicked", i...))
 	if t.FailFast {
-		t.FailNow()
+		os.Exit(1)
 	}
 }
 
@@ -118,7 +119,7 @@ func (t *T) Assert(condition bool, i ...interface{}) {
 	if !condition {
 		t.log(msg(assertFailMsg, i...))
 		if t.FailFast {
-			t.FailNow()
+			os.Exit(1)
 		}
 	}
 }
