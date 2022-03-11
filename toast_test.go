@@ -36,7 +36,7 @@ func testWrap(t *testing.T) {
 func TestToast(t *testing.T) {
 	tt := FromT(t)
 	// making tests
-	tt.FailFast = false
+	tt.FailNow = false
 	tt.mock = true
 
 	tt.ExpectErr(fmt.Errorf("random error"), nil)

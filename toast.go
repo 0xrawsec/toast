@@ -3,7 +3,6 @@ package toast
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -11,7 +10,7 @@ import (
 )
 
 var (
-	FailFast = true
+	FailNow = true
 )
 
 const (
@@ -53,12 +52,12 @@ func AssertOrPanic(condition bool, i ...interface{}) {
 
 type T struct {
 	*testing.T
-	FailFast bool
-	mock     bool // to be able to test that structure without test failure
+	FailNow bool
+	mock    bool // to be able to test that structure without test failure
 }
 
 func FromT(t *testing.T) *T {
-	return &T{t, FailFast, false}
+	return &T{t, FailNow, false}
 }
 
 func (t *T) log(s string) {
@@ -71,16 +70,16 @@ func (t *T) log(s string) {
 
 func (t *T) Error(i ...interface{}) {
 	t.log(msg("", i...))
-	if t.FailFast {
-		os.Exit(1)
+	if t.FailNow {
+		t.T.FailNow()
 	}
 }
 
 func (t *T) CheckErr(err error) {
 	if err != nil {
 		t.log(msg("", err))
-		if t.FailFast {
-			os.Exit(1)
+		if t.FailNow {
+			t.T.FailNow()
 		}
 	}
 }
@@ -88,8 +87,8 @@ func (t *T) CheckErr(err error) {
 func (t *T) ExpectErr(err, expect error) {
 	if !errors.As(err, &expect) {
 		t.log(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
-		if t.FailFast {
-			os.Exit(1)
+		if t.FailNow {
+			t.T.FailNow()
 		}
 	}
 }
@@ -98,8 +97,8 @@ func (t *T) ShouldPanic(f func(), i ...interface{}) {
 	defer func() { recover() }()
 	f()
 	t.log(msg("should have panicked", i...))
-	if t.FailFast {
-		os.Exit(1)
+	if t.FailNow {
+		t.T.FailNow()
 	}
 }
 
@@ -118,8 +117,8 @@ func (t *T) Wrap(init, test, cleanup func(*testing.T)) {
 func (t *T) Assert(condition bool, i ...interface{}) {
 	if !condition {
 		t.log(msg(assertFailMsg, i...))
-		if t.FailFast {
-			os.Exit(1)
+		if t.FailNow {
+			t.T.FailNow()
 		}
 	}
 }
