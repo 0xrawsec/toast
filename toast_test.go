@@ -40,7 +40,10 @@ func TestToast(t *testing.T) {
 	tt.mock = true
 
 	tt.ExpectErr(fmt.Errorf("random error"), nil)
+	// should not print anything
 	tt.ExpectErr(fmt.Errorf("encountered error %w", io.ErrClosedPipe), io.ErrClosedPipe)
+	// should print error message
+	tt.ExpectErr(fmt.Errorf("encountered error %w", io.ErrClosedPipe), io.ErrUnexpectedEOF)
 
 	tt.Wrap(initTest, testWrap, cleanupTest)
 
@@ -56,4 +59,10 @@ func TestToast(t *testing.T) {
 	tt.CheckErr(nil)
 	// should print message
 	tt.CheckErr(fmt.Errorf("This is a random error"))
+}
+
+func TestToastNoMock(t *testing.T) {
+	tt := FromT(t)
+
+	tt.ExpectErr(fmt.Errorf("encountered error %w", io.ErrClosedPipe), io.ErrClosedPipe)
 }
