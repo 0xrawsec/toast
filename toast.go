@@ -64,6 +64,10 @@ func FromT(t *testing.T) *T {
 }
 
 func (t *T) log(s string) {
+	t.T.Log(s)
+}
+
+func (t *T) logErr(s string) {
 	f := t.T.Error
 	if t.mock {
 		f = t.T.Log
@@ -72,7 +76,7 @@ func (t *T) log(s string) {
 }
 
 func (t *T) Error(i ...interface{}) {
-	t.log(msg("", i...))
+	t.logErr(msg("", i...))
 	if t.FailNow {
 		t.T.FailNow()
 	}
@@ -80,7 +84,7 @@ func (t *T) Error(i ...interface{}) {
 
 func (t *T) CheckErr(err error) {
 	if err != nil {
-		t.log(msg("", err))
+		t.logErr(msg("", err))
 		if t.FailNow {
 			t.T.FailNow()
 		}
@@ -89,7 +93,7 @@ func (t *T) CheckErr(err error) {
 
 func (t *T) ExpectErr(err, expect error) {
 	if !errors.Is(err, expect) {
-		t.log(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
+		t.logErr(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
 		if t.FailNow {
 			t.T.FailNow()
 		}
@@ -99,7 +103,7 @@ func (t *T) ExpectErr(err, expect error) {
 func (t *T) ShouldPanic(f func(), i ...interface{}) {
 	defer func() { recover() }()
 	f()
-	t.log(msg("should have panicked", i...))
+	t.logErr(msg("should have panicked", i...))
 	if t.FailNow {
 		t.T.FailNow()
 	}
@@ -125,7 +129,7 @@ func (t *T) TimeIt(name string, f func()) {
 
 func (t *T) Assert(condition bool, i ...interface{}) {
 	if !condition {
-		t.log(msg(assertFailMsg, i...))
+		t.logErr(msg(assertFailMsg, i...))
 		if t.FailNow {
 			t.T.FailNow()
 		}
