@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"testing"
+	"time"
 )
 
 var (
@@ -59,6 +60,8 @@ func TestToast(t *testing.T) {
 	tt.CheckErr(nil)
 	// should print message
 	tt.CheckErr(fmt.Errorf("This is a random error"))
+
+	tt.TimeIt("sleeping", func() { time.Sleep(50 * time.Millisecond) })
 }
 
 func TestToastNoMock(t *testing.T) {

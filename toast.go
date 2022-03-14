@@ -7,10 +7,13 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
 	FailNow = true
+
+	format = fmt.Sprintf
 )
 
 const (
@@ -112,6 +115,12 @@ func (t *T) Wrap(init, test, cleanup func(*testing.T)) {
 	}
 
 	test(t.T)
+}
+
+func (t *T) TimeIt(name string, f func()) {
+	timer := time.Now()
+	f()
+	t.log(msg("", "Time", format("%s:", name), time.Since(timer).String()))
 }
 
 func (t *T) Assert(condition bool, i ...interface{}) {
