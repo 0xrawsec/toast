@@ -37,7 +37,7 @@ func testWrap(t Toaster) {
 func TestToast(t *testing.T) {
 	tt := FromT(t)
 	// making tests
-	tt.FailNow = false
+	tt.FailNowFl = false
 	tt.mock = true
 
 	tt.ExpectErr(fmt.Errorf("random error"), nil)
@@ -67,5 +67,6 @@ func TestToast(t *testing.T) {
 func TestToastNoMock(t *testing.T) {
 	tt := FromT(t)
 
+	tt.Logf("hello world")
 	tt.ExpectErr(fmt.Errorf("encountered error %w", io.ErrClosedPipe), io.ErrClosedPipe)
 }

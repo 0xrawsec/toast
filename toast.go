@@ -54,15 +54,30 @@ func AssertOrPanic(condition bool, i ...interface{}) {
 }
 
 type Toaster interface {
-	FailNow()
-	Log(args ...interface{})
+	Cleanup(f func())
 	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
+	Fail()
+	FailNow()
+	Failed() bool
+	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
+	Helper()
+	Log(args ...interface{})
+	Logf(format string, args ...interface{})
+	Name() string
+	Setenv(key, value string)
+	Skip(args ...interface{})
+	SkipNow()
+	Skipf(format string, args ...interface{})
+	Skipped() bool
+	TempDir() string
 }
 
 type T struct {
-	T       Toaster
-	FailNow bool
-	mock    bool // to be able to test that structure without test failure
+	Toaster
+	FailNowFl bool
+	mock      bool // to be able to test that structure without test failure
 }
 
 func FromT(t *testing.T) *T {
@@ -78,29 +93,29 @@ func From(t Toaster) *T {
 }
 
 func (t *T) log(s string) {
-	t.T.Log(s)
+	t.Log(s)
 }
 
 func (t *T) logErr(s string) {
-	f := t.T.Error
+	f := t.Error
 	if t.mock {
-		f = t.T.Log
+		f = t.Log
 	}
 	f(s)
 }
 
 func (t *T) Error(i ...interface{}) {
 	t.logErr(msg("", i...))
-	if t.FailNow {
-		t.T.FailNow()
+	if t.FailNowFl {
+		t.FailNow()
 	}
 }
 
 func (t *T) CheckErr(err error) {
 	if err != nil {
 		t.logErr(msg("", err))
-		if t.FailNow {
-			t.T.FailNow()
+		if t.FailNowFl {
+			t.FailNow()
 		}
 	}
 }
@@ -108,8 +123,8 @@ func (t *T) CheckErr(err error) {
 func (t *T) ExpectErr(err, expect error) {
 	if !errors.Is(err, expect) {
 		t.logErr(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
-		if t.FailNow {
-			t.T.FailNow()
+		if t.FailNowFl {
+			t.FailNow()
 		}
 	}
 }
@@ -118,21 +133,21 @@ func (t *T) ShouldPanic(f func(), i ...interface{}) {
 	defer func() { recover() }()
 	f()
 	t.logErr(msg("should have panicked", i...))
-	if t.FailNow {
-		t.T.FailNow()
+	if t.FailNowFl {
+		t.FailNow()
 	}
 }
 
 func (t *T) Wrap(init, test, cleanup func(t Toaster)) {
 	if init != nil {
-		init(t.T)
+		init(t)
 	}
 
 	if cleanup != nil {
-		defer func() { cleanup(t.T) }()
+		defer func() { cleanup(t) }()
 	}
 
-	test(t.T)
+	test(t)
 }
 
 func (t *T) TimeIt(name string, f func()) {
@@ -144,8 +159,8 @@ func (t *T) TimeIt(name string, f func()) {
 func (t *T) Assert(condition bool, i ...interface{}) {
 	if !condition {
 		t.logErr(msg(assertFailMsg, i...))
-		if t.FailNow {
-			t.T.FailNow()
+		if t.FailNowFl {
+			t.FailNow()
 		}
 	}
 }
