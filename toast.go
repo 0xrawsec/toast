@@ -53,13 +53,27 @@ func AssertOrPanic(condition bool, i ...interface{}) {
 	}
 }
 
+type Toaster interface {
+	FailNow()
+	Log(args ...interface{})
+	Error(args ...interface{})
+}
+
 type T struct {
-	*testing.T
+	T       Toaster
 	FailNow bool
 	mock    bool // to be able to test that structure without test failure
 }
 
 func FromT(t *testing.T) *T {
+	return &T{t, FailNow, false}
+}
+
+func FromB(t *testing.B) *T {
+	return &T{t, FailNow, false}
+}
+
+func From(t Toaster) *T {
 	return &T{t, FailNow, false}
 }
 
@@ -109,7 +123,7 @@ func (t *T) ShouldPanic(f func(), i ...interface{}) {
 	}
 }
 
-func (t *T) Wrap(init, test, cleanup func(*testing.T)) {
+func (t *T) Wrap(init, test, cleanup func(t Toaster)) {
 	if init != nil {
 		init(t.T)
 	}

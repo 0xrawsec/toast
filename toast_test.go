@@ -11,7 +11,7 @@ var (
 	i = 0
 )
 
-func initTest(t *testing.T) {
+func initTest(t Toaster) {
 	if i != 0 {
 		t.Error("Init failed")
 	}
@@ -19,14 +19,14 @@ func initTest(t *testing.T) {
 	i++
 }
 
-func cleanupTest(t *testing.T) {
+func cleanupTest(t Toaster) {
 	if i != 2 {
 		t.Error("Cleanup test failed")
 	}
 	t.Log("Doing some cleanup job")
 }
 
-func testWrap(t *testing.T) {
+func testWrap(t Toaster) {
 	if i != 1 {
 		t.Error("Wrapped test failed")
 	}
