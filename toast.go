@@ -3,6 +3,7 @@ package toast
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -30,10 +31,21 @@ func mkfmt(i ...interface{}) string {
 
 func msg(or string, i ...interface{}) string {
 	var prefix string
-	_, filename, line, ok := runtime.Caller(2)
+
+	var filename string
+	var line int
+	var ok bool
+
+	for skip := 2; skip < 8; skip++ {
+		_, filename, line, ok = runtime.Caller(skip)
+		if strings.HasSuffix(filepath.Base(filename), "_test.go") {
+			break
+		}
+	}
 
 	if ok {
-		prefix = fmt.Sprintf("\r    %s:%d:", filepath.Base(filename), line)
+		prefix = fmt.Sprintf("    %s:%d:", filename, line)
+		//prefix = fmt.Sprintf("    %s:%d:", filepath.Base(filename), line)
 		i = append([]interface{}{prefix}, i...)
 		if len(i) > 1 {
 			return fmt.Sprintf(mkfmt(i...), i...)
@@ -44,6 +56,7 @@ func msg(or string, i ...interface{}) string {
 	if len(i) > 0 {
 		return fmt.Sprintf(mkfmt(i...), i...)
 	}
+
 	return or
 }
 
@@ -92,28 +105,35 @@ func From(t Toaster) *T {
 	return &T{t, FailNow, false}
 }
 
-func (t *T) log(s string) {
-	t.Log(s)
-}
-
 func (t *T) logErr(s string) {
-	f := t.Error
 	if t.mock {
-		f = t.Log
+		t.Log(s)
+	} else {
+		t.Error(s)
 	}
-	f(s)
 }
 
-func (t *T) Error(i ...interface{}) {
-	t.logErr(msg("", i...))
-	if t.FailNowFl {
-		t.FailNow()
-	}
+func (t *T) Log(args ...interface{}) {
+	fmt.Fprintln(os.Stderr, msg("", args...))
+}
+
+func (t *T) Logf(f string, args ...interface{}) {
+	fmt.Fprintln(os.Stderr, msg("", fmt.Sprintf(f, args...)))
+}
+
+func (t *T) Error(args ...interface{}) {
+	fmt.Fprintln(os.Stderr, msg("", args...))
+	t.Fail()
+}
+
+func (t *T) Errorf(f string, args ...interface{}) {
+	fmt.Fprintln(os.Stderr, msg("", fmt.Sprintf(f, args...)))
+	t.Fail()
 }
 
 func (t *T) CheckErr(err error) {
 	if err != nil {
-		t.logErr(msg("", err))
+		t.logErr(fmt.Sprint(err))
 		if t.FailNowFl {
 			t.FailNow()
 		}
@@ -122,7 +142,7 @@ func (t *T) CheckErr(err error) {
 
 func (t *T) ExpectErr(err, expect error) {
 	if !errors.Is(err, expect) {
-		t.logErr(msg("unexpected error", fmt.Errorf("expecting %v got %v", expect, err)))
+		t.logErr(fmt.Sprintf("expecting %v got %v", expect, err))
 		if t.FailNowFl {
 			t.FailNow()
 		}
@@ -132,7 +152,7 @@ func (t *T) ExpectErr(err, expect error) {
 func (t *T) ShouldPanic(f func(), i ...interface{}) {
 	defer func() { recover() }()
 	f()
-	t.logErr(msg("should have panicked", i...))
+	t.logErr(fmt.Sprint(i...))
 	if t.FailNowFl {
 		t.FailNow()
 	}
@@ -153,12 +173,12 @@ func (t *T) Wrap(init, test, cleanup func(t Toaster)) {
 func (t *T) TimeIt(name string, f func()) {
 	timer := time.Now()
 	f()
-	t.log(msg("", "Time", format("%s:", name), time.Since(timer).String()))
+	t.Log("Time", format("%s:", name), time.Since(timer).String())
 }
 
 func (t *T) Assert(condition bool, i ...interface{}) {
 	if !condition {
-		t.logErr(msg(assertFailMsg, i...))
+		t.logErr(assertFailMsg)
 		if t.FailNowFl {
 			t.FailNow()
 		}
